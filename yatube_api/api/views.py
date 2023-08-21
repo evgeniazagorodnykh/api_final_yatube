@@ -14,7 +14,7 @@ class CreateListViewSet(mixins.CreateModelMixin, mixins.ListModelMixin,
 
 
 class PostViewSet(viewsets.ModelViewSet):
-    queryset = Post.objects.all()
+    queryset = Post.objects.select_related('author').all()
     serializer_class = PostSerializer
     pagination_class = LimitOffsetPagination
     permission_classes = (AuthorOrReadOnly,)
@@ -29,7 +29,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         post = self.kwargs.get('post_id')
-        return Comment.objects.filter(post_id=post)
+        return Comment.objects.select_related('author').filter(post_id=post)
 
     def perform_create(self, serializer):
         post = self.kwargs.get('post_id')

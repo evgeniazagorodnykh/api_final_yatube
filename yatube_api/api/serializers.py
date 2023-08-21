@@ -3,8 +3,6 @@ import base64
 from django.core.files.base import ContentFile
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
-from django.shortcuts import get_object_or_404
-
 
 from posts.models import Comment, Post, Group, Follow, User
 
@@ -49,21 +47,21 @@ class CommentSerializer(serializers.ModelSerializer):
 
 class FollowSerializer(serializers.ModelSerializer):
     user = SlugRelatedField(slug_field='username', read_only=True)
-    following = serializers.CharField()
+    following = SlugRelatedField(
+        slug_field='username', queryset=User.objects.all())
 
     class Meta:
         model = Follow
-        fields = ('id', 'user', 'following')
+        fields = '__all__'
 
     def create(self, validated_data):
         following = validated_data['following']
         user = validated_data['user']
-        if following == str(user):
+        if following == user:
             raise serializers.ValidationError(
                 'Нельзя подписаться на самого себя')
         if Follow.objects.filter(
-                following__username=following, user=user).count() != 0:
+                following=following, user=user).exists():
             raise serializers.ValidationError(
                 'Нельзя дважды подписаться на одного пользователя')
-        cur_following = get_object_or_404(User, username=following)
-        return Follow.objects.create(following=cur_following, user=user)
+        return Follow.objects.create(following=following, user=user)
